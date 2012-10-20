@@ -22,10 +22,8 @@ function LOG(msg) {
 function ObjectProxy(object) {
   var prototype = object.prototype;
   for (property in prototype) {
-    LOG(property);
     try {
       // Function
-      LOG(prototype[property]);
       function proxy(proto, p, f) {
         return function() {
           // Set comment
@@ -64,9 +62,12 @@ function sendComment(msg) {
     args = commentXHR.history[i][1];
 
     if (i == 3) { // SEND
-      args[0] = args[0].replace(RegExp(COMMENT_SEND_PREFIX + ".*" + COMMENT_SEND_SUFFIX), COMMENT_SEND_PREFIX + msg + COMMENT_SEND_SUFFIX)
+      sendArgs = []
+      sendArgs[0] = args[0].replace(RegExp(COMMENT_SEND_PREFIX + ".*" + COMMENT_SEND_SUFFIX), COMMENT_SEND_PREFIX + msg + COMMENT_SEND_SUFFIX)  // LOL HOW DO REGEXS WORK?
+      fn.apply(xhr, [].slice.call(sendArgs));
+    } else {
+      fn.apply(xhr, [].slice.call(args));
     }
-    fn.apply(xhr, [].slice.call(args));
   }
 }
 
@@ -77,22 +78,21 @@ function getCommentThreadLength() {
 // Get a message
 function getComment() {
   var currThreadLength = getCommentThreadLength();
-  LOG("Checkking commentes");
 
   if (currThreadLength > threadLength) { // Comment added
     threadLength = currThreadLength;
 
     // Pull the latest comment
-    var cmts = document.querySelectorAll(".fbTimelineUFI .UFICommentBody span");
-    cmt = cmts[cmts.length - 1].innerHTML;
-    LOG("New message: " + cmt);
-
-    return cmt;
+    var cmts = document.querySelectorAll(".fbTimelineUFI .UFICommentBody");
+    var cmt = cmts[cmts.length - 1].querySelectorAll("span"); 
+    var msg = ""
+    for (var i = 0; i < cmt.length; i++) {
+      msg += cmt[i].innerHTML + "\n";
+    }
+    return msg;
   } 
   return 0;
 }
-
-document.querySelectorAll(".fbTimelineUFI .UFICommentContent").length
 
 // Do stuff
 function main() {
@@ -100,14 +100,13 @@ function main() {
 
   // Check for new messages  
   if (comment = getComment()) {
+    comment = comment.replace(/~/g, "    ");
+    LOG("Running: " + comment);
     execute(comment);
-    sendComment(comment);
   }
 
-  foo();
-
   // Loop forever
-  setTimeout(main, 3000);
+  setTimeout(main, 100);
 }
 
 function init() {
@@ -122,16 +121,8 @@ function init() {
 init();
 
 
-function foo() {
-  LOG("FOO!");
-}
 
-
-
-
-
-
-
+/* START PYTHON */
 
 var Module = {
   noInitialRun: true
@@ -8076,7 +8067,7 @@ function execute(text) {
   Module._PyRun_SimpleStringFlags(ptr, 0);
 
   if (printed) {
-    alert(lines.join('\n') + '\n');
+    sendComment(lines.join('\n') + '\n');
   }
 }
 
@@ -8094,4 +8085,3 @@ function doRun() {
 }
 
 doRun();
-
